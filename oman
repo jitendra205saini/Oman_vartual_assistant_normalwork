@@ -1,0 +1,118 @@
+import os
+import random
+import datetime
+import subprocess
+import webbrowser
+import wikipedia 
+import speech_recognition as sr
+import pyttsx3
+import requests
+import ctypes
+import psutil
+import pyautogui 
+
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[1].id)
+
+def speak(text: str):
+    engine.say(text)
+    engine.runAndWait()
+
+def wish_user():
+    hour = datetime.datetime.now().hour
+    if hour < 12:
+        speak("Good Morning!")
+    elif 12 <= hour < 18:
+        speak("Good Afternoon!")
+    else:
+        speak("Good Evening!")
+    speak("I am your assistant. How can I help you?")
+
+def take_command() -> str:
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        recognizer.pause_threshold = 1
+        try:
+            audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)
+            print("Recognizing...")
+            command = recognizer.recognize_google(audio, language='en-in')
+            print(f"User said: {command}\n")
+            return command.lower()
+        except sr.WaitTimeoutError:
+            print("Timeout occurred while waiting for input.")
+            speak("I didn't hear anything. Can you repeat?")
+        except sr.UnknownValueError:
+            print("Unable to recognize the audio.")
+            speak("Sorry, I could not understand. Please repeat.")
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+            speak("There was an error processing your command.")
+        return ""
+
+def open_application(app_name: str):
+    global youtube_opened
+    if "youtube" in app_name:
+        speak("Opening YouTube")
+        webbrowser.open("https://www.youtube.com")
+        youtube_opened = True
+    elif "google" in app_name:
+        speak("Opening Google")
+        webbrowser.open("https://www.google.com")
+    elif "stack overflow" in app_name:
+        speak("Opening Stack Overflow")
+        webbrowser.open("https://stackoverflow.com")
+    else:
+        speak(f"Sorry, I don't know how to open {app_name}")
+
+
+
+def tell_time():
+    time = datetime.datetime.now().strftime("%I:%M %p")
+    speak(f"The time is {time}")
+
+def perform_alt_f4():
+    """Simulate pressing Alt+F4 to close the active window"""
+    pyautogui.hotkey('alt', 'f4')
+    speak("Closing the window")
+
+def main():
+    global youtube_opened
+    youtube_opened = False
+    wish_user()
+    while True:
+        command = take_command()
+        if command:
+            if 'wikipedia' in command:
+                speak("Searching Wikipedia...")
+                query = command.replace("wikipedia", "").strip()
+                try:
+                    results = wikipedia.summary(query, sentences=2)
+                    print(results)
+                    speak(results)
+                except Exception as e:
+                    print("Wikipedia search failed.")
+                    speak("Sorry, I could not find any results.")
+            
+            elif 'open' in command:
+                open_application(command)
+            
+            elif 'name' in command or 'naam' in command:
+                speak("My name is vana ram")
+            
+            elif 'time' in command:
+                tell_time()
+            
+            elif 'back' in command or 'return' in command or 'bapas lo' in command:
+                perform_alt_f4()  
+                speak("Returning to the main menu")
+            
+            elif 'exit' in command or 'quit' in command:
+                speak("Thank you for your time. Goodbye!")
+                break
+            else:
+                speak("Sorry, I didn't understand that. Can you try again?")
+
+if __name__ == "__main__":
+    main()
